@@ -1,4 +1,8 @@
 import gzip
+# from sklearn.svm import SVR
+import numpy as np
+from sklearn.cross_validation import train_test_split as split
+from sklearn.metrics import mean_squared_error as mse
 # from collections import Counter
 # import pickle
 
@@ -28,25 +32,25 @@ def take(n, iterator):
         yield d
 
 
-def featurize(d):
-    features = ['review/time', 'review/helpfulness']
-    if all(f in d for f in features):
-        return (int(d['review/time']), d['review/helpfulness'])
-    else:
-        return None
+# def featurize(d):
+#     features = ['review/time', 'review/helpfulness']
+#     if all(f in d for f in features):
+#         return (int(d['review/time']), d['review/helpfulness'])
+#     else:
+#         return None
 
 
-def find_duplicate():
-    features = ['review/userId', 'review/time', '0517150328']
-    data = (r for r in parse("data/books.txt.gz") if all(f in r for f in features))
-    ids = {}
-    extract_feature = lambda r: tuple(r[f] for f in features)
-    for r in data:
-        id0 = extract_feature(r)
-        if id0 in ids:
-            return r, ids[id0]
-        else:
-            ids[id0] = r
+# def find_duplicate():
+#     features = ['review/userId', 'review/time', '0517150328']
+#     data = (r for r in parse("data/books.txt.gz") if all(f in r for f in features))
+#     ids = {}
+#     extract_feature = lambda r: tuple(r[f] for f in features)
+#     for r in data:
+#         id0 = extract_feature(r)
+#         if id0 in ids:
+#             return r, ids[id0]
+#         else:
+#             ids[id0] = r
 
 
 def flatten(iterators):
@@ -56,9 +60,9 @@ def flatten(iterators):
 
 
 def product_reviews(reviews):
-    r = next(reviews)
-    product_id = r['product/productId']
-    product_reviews = [r]
+    r0 = next(reviews)
+    product_id = r0['product/productId']
+    product_reviews = [r0]
     for r in reviews:
         if r['product/productId'] == product_id:
             product_reviews.append(r)
@@ -71,6 +75,7 @@ def product_reviews(reviews):
 
 
 def merge_duplicates(rlist):
+    '''rlist is a list of reviews for a single product.'''
     key = ['review/userId', 'review/time', 'product/productId']
     keyify = lambda r: tuple(r[k] for k in key)
     reviews = {}
@@ -120,3 +125,27 @@ def reviews(num=None, users=None, f=None):
     if f is not None:
         reviews = (f(r) for r in reviews)
     return reviews
+
+
+def data(n_samples, split_ratio):
+    X = np.array([extract_features(r) for r in reviews(num=n_samples)])
+    X_train, X_test = split(X, test_size=split_ratio)
+
+    y = np.array([extract_labels(r) for r in reviews(num=n_samples)])
+    y_train, y_test = split(y, test_size=split_ratio)
+
+    return X_train, X_test, y_train, y_test
+
+
+def error(clf, X_test, y_test):
+    y_predict = clf.predict(X_test)
+    return mse(y_test, y_predict)
+
+
+def extract_features(r):
+    return float(r['review/score']), len(r['review/text']), 1
+
+
+def extract_labels(r):
+    n, d = parse_helpfulness(r)
+    return n / d
