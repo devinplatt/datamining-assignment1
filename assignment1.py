@@ -115,7 +115,7 @@ def reviews(num=None, users=None, f=None):
     if num:
         reviews = take(num, reviews)
     if users:
-        users = set(users)
+        users = set(users) if type(users) is not set else users
         reviews = (r for r in reviews if r['review/userId'] in users)
     if f is not None:
         reviews = (f(r) for r in reviews)
