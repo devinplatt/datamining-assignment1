@@ -81,7 +81,9 @@ def merge_duplicates(rlist):
             reviews[k]['review/helpfulness'] = new_helpfulness
         else:
             reviews[k] = r
-    yield from reviews.values()
+
+    for r in reviews.values():
+        yield r
 
 
 def parse_helpfulness(r):
