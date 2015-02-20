@@ -102,18 +102,21 @@ def has_helpfulness(r):
     return 'review/helpfulness' in r and r['review/helpfulness'] != '0/0'
 
 
-def reviews(num=None, users=None):
+def reviews(num=None, users=None, f=None):
     '''Returns an iterator of all Amazon reviews that have helpfullness.
     num: Limits the number of reviews. If None then all reviews.
-    users: Limits to a list of users. All if None.'''
+    users: Limits to a list of users. All if None.
+    f: function that is applied on each review.'''
     data = parse('data/books.txt.gz')
     data = (d for d in data if has_helpfulness(d))
     rlists = product_reviews(data)
-    merged = map(merge_duplicates, rlists)
+    merged = (merge_duplicates(rlist) for rlist in rlists)
     reviews = flatten(merged)
     if num:
         reviews = take(num, reviews)
     if users:
         users = set(users)
         reviews = (r for r in reviews if r['review/userId'] in users)
+    if f is not None:
+        reviews = (f(r) for r in reviews)
     return reviews
