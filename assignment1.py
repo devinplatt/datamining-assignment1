@@ -109,7 +109,7 @@ def reviews(num=None, users=None):
     data = parse('data/books.txt.gz')
     data = (d for d in data if has_helpfulness(d))
     rlists = product_reviews(data)
-    merged = map(merge_duplicates, rlists)
+    merged = (merge_duplicates(rlist) for rlist in rlists)
     reviews = flatten(merged)
     if num:
         reviews = take(num, reviews)
