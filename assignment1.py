@@ -1,6 +1,7 @@
 import gzip
-from collections import Counter
-import pickle
+# from collections import Counter
+# import pickle
+
 
 def parse(filename):
   f = gzip.open(filename, 'rt')
@@ -20,11 +21,13 @@ def parse(filename):
 
 datafile = "data/books.txt.gz"
 
+
 def take(n, iterator):
     for i, d in enumerate(iterator):
         if i == n:
             break
         yield d
+
 
 def featurize(d):
     features = ['review/time', 'review/helpfulness']
@@ -32,6 +35,7 @@ def featurize(d):
         return (int(d['review/time']), d['review/helpfulness'])
     else:
         return None
+
 
 def find_duplicate():
     features = ['review/userId', 'review/time', '0517150328']
@@ -45,10 +49,12 @@ def find_duplicate():
         else:
             ids[id0] = r
 
+
 def flatten(iterators):
     for iterator in iterators:
         for r in iterator:
             yield r
+
 
 def product_reviews(reviews):
     r = next(reviews)
@@ -61,8 +67,9 @@ def product_reviews(reviews):
             yield product_reviews
             product_id = r['product/productId']
             product_reviews = [r]
-            
+
     yield product_reviews
+
 
 def merge_duplicates(rlist):
     key = ['review/userId', 'review/time', 'product/productId']
@@ -77,10 +84,12 @@ def merge_duplicates(rlist):
             reviews[k] = r
     yield from reviews.values()
 
+
 def parse_helpfulness(r):
     s = r['review/helpfulness']
     n, d = s.split('/')
     return int(n), int(d)
+
 
 def add_helpfulness(r1, r2):
     n1, d1 = parse_helpfulness(r1)
