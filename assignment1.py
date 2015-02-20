@@ -4,20 +4,19 @@ import gzip
 
 
 def parse(filename):
-  f = gzip.open(filename, 'rt')
-  entry = {}
-  for l in f:
-
-    l = l.strip()
-    colonPos = l.find(':')
-    if colonPos == -1:
-      yield entry
-      entry = {}
-      continue
-    eName = l[:colonPos]
-    rest = l[colonPos+2:]
-    entry[eName] = rest
-  yield entry
+    f = gzip.open(filename, 'rt')
+    entry = {}
+    for l in f:
+        l = l.strip()
+        colonPos = l.find(':')
+        if colonPos == -1:
+            yield entry
+            entry = {}
+            continue
+        eName = l[:colonPos]
+        rest = l[colonPos+2:]
+        entry[eName] = rest
+    yield entry
 
 datafile = "data/books.txt.gz"
 
@@ -95,3 +94,24 @@ def add_helpfulness(r1, r2):
     n1, d1 = parse_helpfulness(r1)
     n2, d2 = parse_helpfulness(r2)
     return '{0}/{1}'.format((n1 + n2), (d1 + d2))
+
+
+def has_helpfulness(r):
+    return 'review/helpfulness' in r and r['review/helpfulness'] != '0/0'
+
+
+def reviews(num=None, users=None):
+    '''Returns an iterator of all Amazon reviews that have helpfullness.
+    num: Limits the number of reviews. If None then all reviews.
+    users: Limits to a list of users. All if None.'''
+    data = parse('data/books.txt.gz')
+    data = (d for d in data if has_helpfulness(d))
+    rlists = product_reviews(data)
+    merged = map(merge_duplicates, rlists)
+    reviews = flatten(merged)
+    if num:
+        reviews = take(num, reviews)
+    if users:
+        users = set(users)
+        reviews = (r for r in reviews if r['review/userId'] in users)
+    return reviews
