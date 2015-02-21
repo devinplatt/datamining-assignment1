@@ -133,8 +133,12 @@ def reviews(num=None, users=None, f=None):
     return reviews
 
 
-def data(n_samples, split_ratio):
-    X = np.array([extract_features(r) for r in reviews(num=n_samples)])
+def extract_features(r):
+    return float(r['review/score']), len(r['review/text']), 1
+
+
+def data(n_samples, split_ratio, feature_extractor = extract_features):
+    X = np.array([feature_extractor(r) for r in reviews(num=n_samples)])
     X_train, X_test = split(X, test_size=split_ratio)
 
     y = np.array([extract_labels(r) for r in reviews(num=n_samples)])
@@ -146,10 +150,6 @@ def data(n_samples, split_ratio):
 def error(clf, X_test, y_test):
     y_predict = clf.predict(X_test)
     return mse(y_test, y_predict)
-
-
-def extract_features(r):
-    return float(r['review/score']), len(r['review/text']), 1
 
 
 def extract_labels(r):
