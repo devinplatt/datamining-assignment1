@@ -1,6 +1,8 @@
 import nltk
 #nltk.download()  # Download text data sets, including stop words
 from nltk.corpus import stopwords # Import the stop word list
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.stem.porter import PorterStemmer
 import re
 #import repo.assignment1 as dm
 import assignment1 as dm
@@ -26,6 +28,11 @@ def review_to_words( review_text ):
     # 5. Remove stop words
     meaningful_words = [w for w in words if not w in stops]   
     #
+    # 5.5. Stem and Lemmatize words
+    #lmtzr = WordNetLemmatizer()
+    stemmer = PorterStemmer()
+    meaningful_words = [stemmer.stem(w) for w in meaningful_words]
+    #meaningful_words = [lmtzr.lemmatize(w, 'v') if w != lmtzr.lemmatize(w, 'v') else lmtzr.lemmatize(w, 'n') for w in meaningful_words] 
     # 6. Join the words back into one string separated by space, 
     # and return the result.
     return( " ".join( meaningful_words ))  
