@@ -97,6 +97,11 @@ def parse_helpfulness(r):
     return int(n), int(d)
 
 
+def has_n_helpfulness_ratings(r, n):
+    n, d = parse_helpfulness(r)
+    return d >= n
+
+
 def add_helpfulness(r1, r2):
     n1, d1 = parse_helpfulness(r1)
     n2, d2 = parse_helpfulness(r2)
@@ -117,6 +122,7 @@ def reviews(num=None, users=None, f=None):
     rlists = product_reviews(data)
     merged = (merge_duplicates(rlist) for rlist in rlists)
     reviews = flatten(merged)
+    reviews = (r for r in reviews if has_n_helpfulness_ratings(r, 10))
     if num:
         reviews = take(num, reviews)
     if users:
