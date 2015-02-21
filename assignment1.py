@@ -142,7 +142,7 @@ def data(n_samples, test_ratio, feature_extractor=extract_features):
     X_train, X_test = split(X, test_size=test_ratio)
 
     y = np.array([extract_labels(r) for r in reviews(num=n_samples)])
-    y_train, y_test = split(y, test_size=split_ratio)
+    y_train, y_test = split(y, test_size=test_ratio)
 
     return X_train, X_test, y_train, y_test
 
