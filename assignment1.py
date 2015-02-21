@@ -112,11 +112,6 @@ def has_helpfulness(r):
     return 'review/helpfulness' in r and r['review/helpfulness'] != '0/0'
 
 
-def extract_bag(r):
-    text = r['review/text']
-
-
-
 def reviews(num=None, users=None, f=None):
     '''Returns an iterator of all Amazon reviews that have helpfullness.
     num: Limits the number of reviews. If None then all reviews.
@@ -128,13 +123,13 @@ def reviews(num=None, users=None, f=None):
     merged = (merge_duplicates(rlist) for rlist in rlists)
     reviews0 = flatten(merged)
     reviews = (r for r in reviews0 if has_n_helpfulness_ratings(r, 10))
-    if num:
-        reviews = take(num, reviews)
     if users:
         users = set(users) if type(users) is not set else users
         reviews = (r for r in reviews if r['review/userId'] in users)
     if f is not None:
         reviews = (f(r) for r in reviews)
+    if num:
+        reviews = take(num, reviews)
     return reviews
 
 
@@ -142,9 +137,9 @@ def extract_features(r):
     return float(r['review/score']), len(r['review/text']), 1
 
 
-def data(n_samples, split_ratio, feature_extractor = extract_features):
+def data(n_samples, test_ratio, feature_extractor=extract_features):
     X = np.array([feature_extractor(r) for r in reviews(num=n_samples)])
-    X_train, X_test = split(X, test_size=split_ratio)
+    X_train, X_test = split(X, test_size=test_ratio)
 
     y = np.array([extract_labels(r) for r in reviews(num=n_samples)])
     y_train, y_test = split(y, test_size=split_ratio)
