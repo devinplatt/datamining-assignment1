@@ -188,3 +188,22 @@ def error(clf, X_test, y_test):
 def extract_labels(r):
     n, d = parse_helpfulness(r)
     return n / d
+
+
+def pickle_data(books_zip_path):
+    '''This might take a long time.'''
+    data = parse(books_zip_path)
+    data = (d for d in data if has_helpfulness(d))
+    rlists = product_reviews(data)
+    # Doesn't remove all duplicates.
+    merged = (merge_duplicates(rlist) for rlist in rlists)
+    reviews0 = flatten(merged)
+    reviews = (r for r in reviews0 if has_n_helpfulness_ratings(r, 5))
+
+    count5 = 0
+    f = open('reviews5.pickle', 'wb')
+    for r in reviews:
+        count5 += 1
+        pickle.dump(r, f, protocol=4)
+    print('Pickled {} reviews.'.format(count5))
+    f.close()
