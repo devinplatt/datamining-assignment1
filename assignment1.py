@@ -207,3 +207,16 @@ def pickle_data(books_zip_path):
         pickle.dump(r, f, protocol=4)
     print('Pickled {} reviews.'.format(count5))
     f.close()
+
+
+## Pickle script utilities.
+# XY = np.array([featurize(r) for r in take(100000, unpickle_reviews('reviews5.pickle'))], dtype=float)
+
+# f = open('data100K.pickle', 'wb')
+# pickle.dump(XY, f, protocol=4)
+# f.close()
+
+# f = open('data100K.pickle', 'rb')
+# XY = pickle.load(f)
+# f.close()
+# XY.shape
