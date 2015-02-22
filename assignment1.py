@@ -1,6 +1,7 @@
 import gzip
 from textstat.textstat import textstat
 from nltk import word_tokenize
+from tagger import raubt_tagger
 # from sklearn.svm import SVR
 import numpy as np
 import pickle
