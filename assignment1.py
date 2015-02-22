@@ -1,7 +1,7 @@
 import gzip
 from textstat.textstat import textstat
 from nltk import word_tokenize
-from tagger import raubt_tagger
+from dm.tagger import raubt_tagger
 # from sklearn.svm import SVR
 import numpy as np
 import pickle
@@ -50,7 +50,7 @@ def featurize(r):
     comparative_index = comparative_ratio(r['review/text'])
     n, d = parse_helpfulness(r)
     y = n / d
-    return [length] + lenght_vec + [readability] + rating_vec + [comparative_index, y]
+    return [length] + lenght_vec + [readability] + rating_vec + [comparative_index, 1, y]
 
 
 def vectorize_length(r):
@@ -166,18 +166,16 @@ def unpickle_reviews(fname):
         raise StopIteration
 
 
-def extract_features(r):
-    return float(r['review/score']), len(r['review/text']), 1
+def data():
+    '''Returns (X, y) data for training and validation.'''
+    f = open('X_train.pickle', 'rb')
+    X = pickle.load(f)
+    f.close()
 
-
-def data(n_samples, test_ratio, feature_extractor=extract_features):
-    X = np.array([feature_extractor(r) for r in reviews(num=n_samples)])
-    X_train, X_test = split(X, test_size=test_ratio)
-
-    y = np.array([extract_labels(r) for r in reviews(num=n_samples)])
-    y_train, y_test = split(y, test_size=test_ratio)
-
-    return X_train, X_test, y_train, y_test
+    f = open('y_train.pickle', 'rb')
+    y = pickle.load(f)
+    f.close()
+    return X, y
 
 
 def error(clf, X_test, y_test):
