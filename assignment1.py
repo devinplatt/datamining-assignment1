@@ -1,6 +1,9 @@
 import gzip
+from textstat.textstat import textstat
+from nltk import word_tokenize
 # from sklearn.svm import SVR
 import numpy as np
+import pickle
 from sklearn.cross_validation import train_test_split as split
 from sklearn.metrics import mean_squared_error as mse
 # from collections import Counter
@@ -32,25 +35,38 @@ def take(n, iterator):
         yield d
 
 
-# def featurize(d):
-#     features = ['review/time', 'review/helpfulness']
-#     if all(f in d for f in features):
-#         return (int(d['review/time']), d['review/helpfulness'])
-#     else:
-#         return None
+def comparative_ratio(text):
+    tokens = word_tokenize(text)
+    tags = raubt_tagger.tag(tokens)
+    return sum(p[1] == 'JJR' or p[1] == 'RBR' for p in tags) / len(tokens) if tokens else 0
 
 
-# def find_duplicate():
-#     features = ['review/userId', 'review/time', '0517150328']
-#     data = (r for r in parse("data/books.txt.gz") if all(f in r for f in features))
-#     ids = {}
-#     extract_feature = lambda r: tuple(r[f] for f in features)
-#     for r in data:
-#         id0 = extract_feature(r)
-#         if id0 in ids:
-#             return r, ids[id0]
-#         else:
-#             ids[id0] = r
+def featurize(r):
+    length = len(r['review/text']) / 1000
+    lenght_vec = vectorize_length(r)
+    rating_vec = vectorize_rating(r)
+    readability = textstat.automated_readability_index(r['review/text'])
+    comparative_index = comparative_ratio(r['review/text'])
+    n, d = parse_helpfulness(r)
+    y = n / d
+    return [length] + lenght_vec + [readability] + rating_vec + [comparative_index, y]
+
+
+def vectorize_length(r):
+    n = len(r['review/text'])
+    if n < 100:
+        return [1, 0, 0]
+    elif n < 1000:
+        return [0, 1, 0]
+    else:
+        return [0, 0, 1]
+
+
+def vectorize_rating(r):
+    rating = int(float(r['review/score'])) - 1
+    rating_vec = 5 * [0]
+    rating_vec[rating] = 1
+    return rating_vec
 
 
 def flatten(iterators):
@@ -64,12 +80,15 @@ def product_reviews(reviews):
     product_id = r0['product/productId']
     product_reviews = [r0]
     for r in reviews:
-        if r['product/productId'] == product_id:
-            product_reviews.append(r)
-        else:
-            yield product_reviews
-            product_id = r['product/productId']
-            product_reviews = [r]
+        try:
+            if r['product/productId'] == product_id:
+                product_reviews.append(r)
+            else:
+                yield product_reviews
+                product_id = r['product/productId']
+                product_reviews = [r]
+        except KeyError:
+            pass
 
     yield product_reviews
 
@@ -112,17 +131,20 @@ def has_helpfulness(r):
     return 'review/helpfulness' in r and r['review/helpfulness'] != '0/0'
 
 
-def reviews(num=None, users=None, f=None):
+def reviews(num=None, users=None, f=None, pickled=False):
     '''Returns an iterator of all Amazon reviews that have helpfullness.
     num: Limits the number of reviews. If None then all reviews.
     users: Limits to a list of users. All if None.
     f: function that is applied on each review.'''
-    data = parse('data/books.txt.gz')
-    data = (d for d in data if has_helpfulness(d))
-    rlists = product_reviews(data)
-    merged = (merge_duplicates(rlist) for rlist in rlists)
-    reviews0 = flatten(merged)
-    reviews = (r for r in reviews0 if has_n_helpfulness_ratings(r, 10))
+    if pickled:
+        reviews = unpickle_reviews('reviews5.pickle')
+    else:
+        data = parse('data/books.txt.gz')
+        data = (d for d in data if has_helpfulness(d))
+        rlists = product_reviews(data)
+        merged = (merge_duplicates(rlist) for rlist in rlists)
+        reviews0 = flatten(merged)
+        reviews = (r for r in reviews0 if has_n_helpfulness_ratings(r, 5))
     if users:
         users = set(users) if type(users) is not set else users
         reviews = (r for r in reviews if r['review/userId'] in users)
@@ -131,6 +153,16 @@ def reviews(num=None, users=None, f=None):
     if num:
         reviews = take(num, reviews)
     return reviews
+
+
+def unpickle_reviews(fname):
+    f = open(fname, 'rb')
+    try:
+        while True:
+            yield pickle.load(f)
+    except:
+        f.close()
+        raise StopIteration
 
 
 def extract_features(r):
